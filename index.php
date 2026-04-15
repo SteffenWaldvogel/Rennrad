@@ -17,4 +17,3 @@
     <a href="veranstalter_login.php">Rennveranstalter Login</a>
 </body>
 </html>
-<!-- Steffen Waldvogel 09.04.2026, 20:25 -->
