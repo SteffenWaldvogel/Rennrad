@@ -13,7 +13,7 @@ $fehler = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $loginname = trim($_POST['loginname']);
-    $kennwort  = $_POST['kennwort'];
+    $kennwort = $_POST['kennwort'];
 
     $stmt = $verbindung->prepare(
         "SELECT LoginName, KennwortTeamchef, Teamname, Vorname, Nachname 
@@ -23,9 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $teamchef = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($teamchef && password_verify($kennwort, $teamchef['KennwortTeamchef'])) {
-        $_SESSION['teamchef_login']   = $teamchef['LoginName'];
+        $_SESSION['teamchef_login'] = $teamchef['LoginName'];
         $_SESSION['teamchef_teamname'] = $teamchef['Teamname'];
-        $_SESSION['teamchef_name']    = $teamchef['Vorname'] . ' ' . $teamchef['Nachname'];
+        $_SESSION['teamchef_name'] = $teamchef['Vorname'] . ' ' . $teamchef['Nachname'];
         header('Location: teamchef/dashboard.php');
         exit;
     } else {
@@ -35,11 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teamchef Login</title>
 </head>
+
 <body>
     <a href="index.php">Zurück zur Startseite</a>
     <h1>Teamchef Login</h1>
@@ -58,4 +60,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="submit" value="Anmelden">
     </form>
 </body>
+
 </html>

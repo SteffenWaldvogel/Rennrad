@@ -11,11 +11,13 @@ if (!isset($_SESSION['veranstalter_name'])) {
 ?>
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Veranstalter Dashboard</title>
 </head>
+
 <body>
     <h1>Willkommen, <?= htmlspecialchars($_SESSION['veranstalter_name']) ?></h1>
 
@@ -25,4 +27,5 @@ if (!isset($_SESSION['veranstalter_name'])) {
 
     <a href="logout.php">Abmelden</a>
 </body>
+
 </html>

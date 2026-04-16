@@ -12,7 +12,7 @@ if (isset($_SESSION['veranstalter_name'])) {
 $fehler = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name     = trim($_POST['name']);
+    $name = trim($_POST['name']);
     $kennwort = $_POST['kennwort'];
 
     $stmt = $verbindung->prepare(
@@ -32,11 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rennveranstalter Login</title>
 </head>
+
 <body>
     <a href="index.php">Zurück zur Startseite</a>
     <h1>Rennveranstalter Login</h1>
@@ -55,4 +57,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="submit" value="Anmelden">
     </form>
 </body>
+
 </html>

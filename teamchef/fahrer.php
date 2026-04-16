@@ -1,7 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 include '../includes/db.inc.php';
 include '../includes/fahrer.inc.php';
 session_start();
@@ -13,23 +10,27 @@ if (!isset($_SESSION['teamchef_login'])) {
 }
 
 $teamname = $_SESSION['teamchef_teamname'];
-$fehler   = "";
-$erfolg   = "";
+$fehler = "";
+$erfolg = "";
 
 // Fahrer löschen
 if (isset($_POST['loeschen'])) {
-    $mitarbeiterID = (int)$_POST['loeschen'];
-    fahrerLoeschen($verbindung, $mitarbeiterID, $teamname);
-    $erfolg = "Fahrer wurde gelöscht.";
+    $mitarbeiterID = (int) $_POST['loeschen'];
+    try {
+        fahrerLoeschen($verbindung, $mitarbeiterID, $teamname);
+        $erfolg = "Fahrer wurde gelöscht.";
+    } catch (PDOException $e) {
+        $fehler = "Fahrer kann nicht gelöscht werden, da er noch für Rennen angemeldet ist.";
+    }
 
-// Formular abgeschickt (Anlegen oder Ändern)
+    // Formular abgeschickt (Anlegen oder Ändern)
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $mitarbeiterID = isset($_POST['mitarbeiterID']) ? (int)$_POST['mitarbeiterID'] : null;
-    $ort           = htmlspecialchars(trim($_POST['ort']));
-    $plz           = htmlspecialchars(trim($_POST['plz']));
-    $strasse       = htmlspecialchars(trim($_POST['strasse']));
-    $hausnr        = htmlspecialchars(trim($_POST['hausnr']));
-    $isNeu         = empty($mitarbeiterID);
+    $mitarbeiterID = isset($_POST['mitarbeiterID']) ? (int) $_POST['mitarbeiterID'] : null;
+    $ort = htmlspecialchars(trim($_POST['ort']));
+    $plz = htmlspecialchars(trim($_POST['plz']));
+    $strasse = htmlspecialchars(trim($_POST['strasse']));
+    $hausnr = htmlspecialchars(trim($_POST['hausnr']));
+    $isNeu = empty($mitarbeiterID);
 
     if (empty($ort) || empty($plz) || empty($strasse) || empty($hausnr)) {
         $fehler = "Bitte alle Felder ausfüllen.";
@@ -43,7 +44,7 @@ if (isset($_POST['loeschen'])) {
 // Fahrer zum Bearbeiten laden
 $fahrerBearbeiten = null;
 if (isset($_GET['bearbeiten'])) {
-    $fahrerBearbeiten = fahrerLadenEinzeln($verbindung, (int)$_GET['bearbeiten'], $teamname);
+    $fahrerBearbeiten = fahrerLadenEinzeln($verbindung, (int) $_GET['bearbeiten'], $teamname);
 }
 
 // Alle Fahrer des Teams laden
@@ -51,11 +52,13 @@ $fahrer = fahrerLaden($verbindung, $teamname);
 ?>
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fahrerverwaltung</title>
 </head>
+
 <body>
     <a href="dashboard.php">Zurück zum Dashboard</a>
     <h1>Fahrerverwaltung</h1>
@@ -80,19 +83,19 @@ $fahrer = fahrerLaden($verbindung, $teamname);
 
         <label for="ort">Ort:</label>
         <input type="text" id="ort" name="ort"
-               value="<?= $fahrerBearbeiten ? htmlspecialchars($fahrerBearbeiten['Ort']) : '' ?>" required><br><br>
+            value="<?= $fahrerBearbeiten ? htmlspecialchars($fahrerBearbeiten['Ort']) : '' ?>" required><br><br>
 
         <label for="plz">PLZ:</label>
         <input type="text" id="plz" name="plz"
-               value="<?= $fahrerBearbeiten ? htmlspecialchars($fahrerBearbeiten['PLZ']) : '' ?>" required><br><br>
+            value="<?= $fahrerBearbeiten ? htmlspecialchars($fahrerBearbeiten['PLZ']) : '' ?>" required><br><br>
 
         <label for="strasse">Strasse:</label>
         <input type="text" id="strasse" name="strasse"
-               value="<?= $fahrerBearbeiten ? htmlspecialchars($fahrerBearbeiten['Strasse']) : '' ?>" required><br><br>
+            value="<?= $fahrerBearbeiten ? htmlspecialchars($fahrerBearbeiten['Strasse']) : '' ?>" required><br><br>
 
         <label for="hausnr">Hausnummer:</label>
         <input type="text" id="hausnr" name="hausnr"
-               value="<?= $fahrerBearbeiten ? htmlspecialchars($fahrerBearbeiten['HausNr']) : '' ?>" required><br><br>
+            value="<?= $fahrerBearbeiten ? htmlspecialchars($fahrerBearbeiten['HausNr']) : '' ?>" required><br><br>
 
         <input type="submit" value="Speichern">
     </form>
@@ -134,4 +137,5 @@ $fahrer = fahrerLaden($verbindung, $teamname);
         </table>
     <?php endif; ?>
 </body>
+
 </html>

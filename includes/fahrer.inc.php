@@ -1,8 +1,9 @@
-    <?php
-    // Autor: Steffen Waldvogel
+<?php
+// Autor: Steffen Waldvogel
 
-    // Speichert oder ändert einen Fahrer (eine Funktion für beides)
-    function fahrerSpeichern($verbindung, $mitarbeiterID, $teamname, $ort, $plz, $strasse, $hausnr, $isNeu) {
+// Speichert oder ändert einen Fahrer
+function fahrerSpeichern($verbindung, $mitarbeiterID, $teamname, $ort, $plz, $strasse, $hausnr, $isNeu)
+{
     if ($isNeu) {
         $stmt = $verbindung->prepare(
             "INSERT INTO Fahrer (Ort, PLZ, Strasse, HausNr, Teamname)
@@ -18,7 +19,8 @@
     }
 }
 
-function fahrerLaden($verbindung, $teamname) {
+function fahrerLaden($verbindung, $teamname)
+{
     $stmt = $verbindung->prepare(
         "SELECT MitarbeiterID, Ort, PLZ, Strasse, HausNr 
          FROM Fahrer WHERE Teamname = ? ORDER BY MitarbeiterID"
@@ -27,7 +29,8 @@ function fahrerLaden($verbindung, $teamname) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function fahrerLadenEinzeln($verbindung, $mitarbeiterID, $teamname) {
+function fahrerLadenEinzeln($verbindung, $mitarbeiterID, $teamname)
+{
     $stmt = $verbindung->prepare(
         "SELECT MitarbeiterID, Ort, PLZ, Strasse, HausNr 
          FROM Fahrer WHERE MitarbeiterID = ? AND Teamname = ?"
@@ -36,7 +39,8 @@ function fahrerLadenEinzeln($verbindung, $mitarbeiterID, $teamname) {
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-function fahrerLoeschen($verbindung, $mitarbeiterID, $teamname) {
+function fahrerLoeschen($verbindung, $mitarbeiterID, $teamname)
+{
     $stmt = $verbindung->prepare(
         "DELETE FROM Fahrer WHERE MitarbeiterID = ? AND Teamname = ?"
     );

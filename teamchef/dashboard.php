@@ -11,11 +11,13 @@ if (!isset($_SESSION['teamchef_login'])) {
 ?>
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teamchef Dashboard</title>
 </head>
+
 <body>
     <h1>Willkommen, <?= htmlspecialchars($_SESSION['teamchef_name']) ?></h1>
     <p>Team: <?= htmlspecialchars($_SESSION['teamchef_teamname']) ?></p>
@@ -28,4 +30,5 @@ if (!isset($_SESSION['teamchef_login'])) {
 
     <a href="logout.php">Abmelden</a>
 </body>
+
 </html>

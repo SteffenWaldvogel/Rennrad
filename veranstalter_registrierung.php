@@ -13,7 +13,7 @@ $fehler = "";
 $erfolg = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name     = htmlspecialchars(trim($_POST['name']));
+    $name = htmlspecialchars(trim($_POST['name']));
     $kennwort = $_POST['kennwort'];
 
     if (empty($name) || empty($kennwort)) {
@@ -38,11 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rennveranstalter Registrierung</title>
 </head>
+
 <body>
     <a href="index.php">Zurück zur Startseite</a>
     <h1>Rennveranstalter Registrierung</h1>
@@ -58,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form action="veranstalter_registrierung.php" method="post">
             <label for="name">Name:</label>
             <input type="text" id="name" name="name"
-                   value="<?= isset($_POST['name']) ? htmlspecialchars($_POST['name']) : '' ?>" required><br><br>
+                value="<?= isset($_POST['name']) ? htmlspecialchars($_POST['name']) : '' ?>" required><br><br>
 
             <label for="kennwort">Kennwort:</label>
             <input type="password" id="kennwort" name="kennwort" required><br><br>
@@ -67,4 +69,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     <?php endif; ?>
 </body>
+
 </html>
