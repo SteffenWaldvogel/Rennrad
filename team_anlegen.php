@@ -8,12 +8,11 @@ $fehler = "";
 $erfolg = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $teamname = htmlspecialchars(trim($_POST['teamname']));
-    $vorname = htmlspecialchars(trim($_POST['teamchef_vorname']));
-    $nachname = htmlspecialchars(trim($_POST['teamchef_nachname']));
-    $loginname = htmlspecialchars(trim($_POST['teamchef_login']));
-    $kennwort = $_POST['teamchef_kennwort']; // nicht escapen vor dem Hashen
-
+    $teamname = trim($_POST['teamname']);
+    $vorname = trim($_POST['teamchef_vorname']);
+    $nachname = trim($_POST['teamchef_nachname']);
+    $loginname = trim($_POST['teamchef_login']);
+    $kennwort = $_POST['teamchef_kennwort'];
     if (empty($teamname) || empty($vorname) || empty($nachname) || empty($loginname) || empty($kennwort)) {
         $fehler = "Bitte alle Felder ausfüllen.";
     } elseif (teamExistiert($verbindung, $teamname)) {
@@ -38,11 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h1>Neues Team anlegen</h1>
 
     <?php if ($fehler): ?>
-        <p style="color:red;"><?= $fehler ?></p>
+        <p style="color:red;"><?= htmlspecialchars($fehler) ?></p>
     <?php endif; ?>
 
     <?php if ($erfolg): ?>
-        <p style="color:green;"><?= $erfolg ?></p>
+        <p style="color:green;"><?= htmlspecialchars($erfolg) ?></p>
     <?php else: ?>
         <form action="team_anlegen.php" method="post">
 

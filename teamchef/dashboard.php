@@ -1,5 +1,6 @@
 <?php
 // Autor: Steffen Waldvogel
+session_start();
 // Zugriff nur für eingeloggte Teamchefs
 if (!isset($_SESSION['teamchef_login'])) {
     header('Location: ../teamchef_login.php');

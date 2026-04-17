@@ -19,7 +19,7 @@ $stmt->execute();
 $trainingsziele = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fahrer des Teams laden 
-$stmt = $verbindung->prepare("SELECT MitarbeiterID FROM Fahrer WHERE Teamname = ? ORDER BY MitarbeiterID");
+$stmt = $verbindung->prepare("SELECT MitarbeiterID, Vorname, Nachname FROM Fahrer WHERE Teamname = ? ORDER BY Nachname, Vorname");
 $stmt->execute([$teamname]);
 $fahrer = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mitarbeiterID = (int) $_POST['mitarbeiterID'];
     $datum = $_POST['datum'];
     $km = (float) $_POST['km'];
-    $ziel = htmlspecialchars(trim($_POST['ziel']));
+    $ziel = trim($_POST['ziel']);
 
     if (empty($datum) || empty($ziel) || empty($mitarbeiterID) || $km <= 0) {
         $fehler = "Bitte alle Felder ausfüllen.";
@@ -66,10 +66,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p>Team: <?= htmlspecialchars($teamname) ?></p>
 
     <?php if ($fehler): ?>
-        <p style="color:red;"><?= $fehler ?></p>
+        <p style="color:red;"><?= htmlspecialchars($fehler) ?></p>
     <?php endif; ?>
     <?php if ($erfolg): ?>
-        <p style="color:green;"><?= $erfolg ?></p>
+        <p style="color:green;"><?= htmlspecialchars($erfolg) ?></p>
     <?php endif; ?>
 
     <?php if (empty($fahrer)): ?>
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <option value="">-- Fahrer wählen --</option>
                 <?php foreach ($fahrer as $f): ?>
                     <option value="<?= $f['MitarbeiterID'] ?>" <?= (isset($_POST['mitarbeiterID']) && $_POST['mitarbeiterID'] == $f['MitarbeiterID']) ? 'selected' : '' ?>>
-                        ID: <?= htmlspecialchars($f['MitarbeiterID']) ?>
+                        <?= htmlspecialchars($f['Nachname'] . ', ' . $f['Vorname']) ?> (ID: <?= $f['MitarbeiterID'] ?>)
                     </option>
                 <?php endforeach; ?>
             </select><br><br>

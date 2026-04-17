@@ -1,4 +1,5 @@
 <?php
+// Autor: Steffen Waldvogel
 include '../includes/db.inc.php';
 include '../includes/fahrer.inc.php';
 session_start();
@@ -26,25 +27,32 @@ if (isset($_POST['loeschen'])) {
     // Formular abgeschickt (Anlegen oder Ändern)
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mitarbeiterID = isset($_POST['mitarbeiterID']) ? (int) $_POST['mitarbeiterID'] : null;
-    $ort = htmlspecialchars(trim($_POST['ort']));
-    $plz = htmlspecialchars(trim($_POST['plz']));
-    $strasse = htmlspecialchars(trim($_POST['strasse']));
-    $hausnr = htmlspecialchars(trim($_POST['hausnr']));
+    $vorname = trim($_POST['vorname']);
+    $nachname = trim($_POST['nachname']);
+    $ort = trim($_POST['ort']);
+    $plz = trim($_POST['plz']);
+    $strasse = trim($_POST['strasse']);
+    $hausnr = trim($_POST['hausnr']);
+    $telefonnummern = isset($_POST['telefonnummern']) ? (array) $_POST['telefonnummern'] : [];
     $isNeu = empty($mitarbeiterID);
 
-    if (empty($ort) || empty($plz) || empty($strasse) || empty($hausnr)) {
-        $fehler = "Bitte alle Felder ausfüllen.";
+    if (empty($vorname) || empty($nachname) || empty($ort) || empty($plz) || empty($strasse) || empty($hausnr)) {
+        $fehler = "Bitte alle Pflichtfelder ausfüllen.";
     } else {
-        fahrerSpeichern($verbindung, $mitarbeiterID, $teamname, $ort, $plz, $strasse, $hausnr, $isNeu);
+        $neueID = fahrerSpeichern($verbindung, $mitarbeiterID, $teamname, $vorname, $nachname, $ort, $plz, $strasse, $hausnr, $isNeu);
+        telefonnummernSpeichern($verbindung, $neueID, $teamname, $telefonnummern);
         $erfolg = $isNeu ? "Fahrer wurde angelegt." : "Fahrer wurde aktualisiert.";
-        $mitarbeiterID = null;
     }
 }
 
 // Fahrer zum Bearbeiten laden
 $fahrerBearbeiten = null;
+$telefonBearbeiten = [];
 if (isset($_GET['bearbeiten'])) {
     $fahrerBearbeiten = fahrerLadenEinzeln($verbindung, (int) $_GET['bearbeiten'], $teamname);
+    if ($fahrerBearbeiten) {
+        $telefonBearbeiten = telefonnummernLaden($verbindung, (int) $_GET['bearbeiten'], $teamname);
+    }
 }
 
 // Alle Fahrer des Teams laden
@@ -65,21 +73,28 @@ $fahrer = fahrerLaden($verbindung, $teamname);
     <p>Team: <?= htmlspecialchars($teamname) ?></p>
 
     <?php if ($fehler): ?>
-        <p style="color:red;"><?= $fehler ?></p>
+        <p style="color:red;"><?= htmlspecialchars($fehler) ?></p>
     <?php endif; ?>
     <?php if ($erfolg): ?>
-        <p style="color:green;"><?= $erfolg ?></p>
+        <p style="color:green;"><?= htmlspecialchars($erfolg) ?></p>
     <?php endif; ?>
 
-    <!-- Anlegen / Bearbeiten Formular (eine Seite, ein Button) -->
+    <!-- Anlegen / Bearbeiten Formular -->
     <h2><?= $fahrerBearbeiten ? 'Fahrer bearbeiten' : 'Neuen Fahrer anlegen' ?></h2>
     <form action="fahrer.php" method="post">
 
         <?php if ($fahrerBearbeiten): ?>
-            <!-- MitarbeiterID wird mitgeschickt aber nicht geändert -->
             <input type="hidden" name="mitarbeiterID" value="<?= $fahrerBearbeiten['MitarbeiterID'] ?>">
             <p>Mitarbeiter-ID: <?= htmlspecialchars($fahrerBearbeiten['MitarbeiterID']) ?> (nicht änderbar)</p>
         <?php endif; ?>
+
+        <label for="vorname">Vorname:</label>
+        <input type="text" id="vorname" name="vorname"
+            value="<?= $fahrerBearbeiten ? htmlspecialchars($fahrerBearbeiten['Vorname']) : '' ?>" required><br><br>
+
+        <label for="nachname">Nachname:</label>
+        <input type="text" id="nachname" name="nachname"
+            value="<?= $fahrerBearbeiten ? htmlspecialchars($fahrerBearbeiten['Nachname']) : '' ?>" required><br><br>
 
         <label for="ort">Ort:</label>
         <input type="text" id="ort" name="ort"
@@ -97,6 +112,17 @@ $fahrer = fahrerLaden($verbindung, $teamname);
         <input type="text" id="hausnr" name="hausnr"
             value="<?= $fahrerBearbeiten ? htmlspecialchars($fahrerBearbeiten['HausNr']) : '' ?>" required><br><br>
 
+        <label>Telefonnummern:</label><br>
+        <?php
+        // Immer mindestens 3 Eingabefelder anzeigen, ggf. mehr wenn schon welche vorhanden
+        $anzahlFelder = max(3, count($telefonBearbeiten) + 1);
+        for ($i = 0; $i < $anzahlFelder; $i++):
+            $wert = isset($telefonBearbeiten[$i]) ? htmlspecialchars($telefonBearbeiten[$i]) : '';
+            ?>
+            <input type="text" name="telefonnummern[]" value="<?= $wert ?>" placeholder="Telefonnummer"><br>
+        <?php endfor; ?>
+        <br>
+
         <input type="submit" value="Speichern">
     </form>
 
@@ -112,19 +138,26 @@ $fahrer = fahrerLaden($verbindung, $teamname);
         <table border="1">
             <tr>
                 <th>ID</th>
+                <th>Vorname</th>
+                <th>Nachname</th>
                 <th>Ort</th>
                 <th>PLZ</th>
                 <th>Strasse</th>
                 <th>HausNr</th>
+                <th>Telefon</th>
                 <th>Aktionen</th>
             </tr>
             <?php foreach ($fahrer as $f): ?>
+                <?php $nummern = telefonnummernLaden($verbindung, $f['MitarbeiterID'], $teamname); ?>
                 <tr>
                     <td><?= htmlspecialchars($f['MitarbeiterID']) ?></td>
+                    <td><?= htmlspecialchars($f['Vorname']) ?></td>
+                    <td><?= htmlspecialchars($f['Nachname']) ?></td>
                     <td><?= htmlspecialchars($f['Ort']) ?></td>
                     <td><?= htmlspecialchars($f['PLZ']) ?></td>
                     <td><?= htmlspecialchars($f['Strasse']) ?></td>
                     <td><?= htmlspecialchars($f['HausNr']) ?></td>
+                    <td><?= htmlspecialchars(implode(', ', $nummern)) ?></td>
                     <td>
                         <a href="fahrer.php?bearbeiten=<?= $f['MitarbeiterID'] ?>">Bearbeiten</a>
                         <form action="fahrer.php" method="post" style="display:inline;">

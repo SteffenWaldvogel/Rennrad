@@ -13,7 +13,7 @@ $fehler = "";
 $erfolg = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = htmlspecialchars(trim($_POST['name']));
+    $name = trim($_POST['name']);
     $kennwort = $_POST['kennwort'];
 
     if (empty($name) || empty($kennwort)) {
@@ -50,11 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h1>Rennveranstalter Registrierung</h1>
 
     <?php if ($fehler): ?>
-        <p style="color:red;"><?= $fehler ?></p>
+        <p style="color:red;"><?= htmlspecialchars($fehler) ?></p>
     <?php endif; ?>
 
     <?php if ($erfolg): ?>
-        <p style="color:green;"><?= $erfolg ?></p>
+        <p style="color:green;"><?= htmlspecialchars($erfolg) ?></p>
         <a href="veranstalter_login.php">Zum Login</a>
     <?php else: ?>
         <form action="veranstalter_registrierung.php" method="post">

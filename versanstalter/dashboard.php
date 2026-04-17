@@ -1,5 +1,7 @@
 <?php
 // Autor: Steffen Waldvogel
+session_start();
+
 // Zugriff nur für eingeloggte Veranstalter
 if (!isset($_SESSION['veranstalter_name'])) {
     header('Location: ../veranstalter_login.php');

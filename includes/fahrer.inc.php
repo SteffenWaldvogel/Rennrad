@@ -1,29 +1,31 @@
 <?php
 // Autor: Steffen Waldvogel
 
-// Speichert oder ändert einen Fahrer
-function fahrerSpeichern($verbindung, $mitarbeiterID, $teamname, $ort, $plz, $strasse, $hausnr, $isNeu)
+// Speichert oder ändert einen Fahrer; gibt die MitarbeiterID zurück
+function fahrerSpeichern($verbindung, $mitarbeiterID, $teamname, $vorname, $nachname, $ort, $plz, $strasse, $hausnr, $isNeu)
 {
     if ($isNeu) {
         $stmt = $verbindung->prepare(
-            "INSERT INTO Fahrer (Ort, PLZ, Strasse, HausNr, Teamname)
-             VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO Fahrer (Vorname, Nachname, Ort, PLZ, Strasse, HausNr, Teamname)
+             VALUES (?, ?, ?, ?, ?, ?, ?)"
         );
-        $stmt->execute([$ort, $plz, $strasse, $hausnr, $teamname]);
+        $stmt->execute([$vorname, $nachname, $ort, $plz, $strasse, $hausnr, $teamname]);
+        return (int) $verbindung->lastInsertId();
     } else {
         $stmt = $verbindung->prepare(
-            "UPDATE Fahrer SET Ort = ?, PLZ = ?, Strasse = ?, HausNr = ?
+            "UPDATE Fahrer SET Vorname = ?, Nachname = ?, Ort = ?, PLZ = ?, Strasse = ?, HausNr = ?
              WHERE MitarbeiterID = ? AND Teamname = ?"
         );
-        $stmt->execute([$ort, $plz, $strasse, $hausnr, $mitarbeiterID, $teamname]);
+        $stmt->execute([$vorname, $nachname, $ort, $plz, $strasse, $hausnr, $mitarbeiterID, $teamname]);
+        return $mitarbeiterID;
     }
 }
 
 function fahrerLaden($verbindung, $teamname)
 {
     $stmt = $verbindung->prepare(
-        "SELECT MitarbeiterID, Ort, PLZ, Strasse, HausNr 
-         FROM Fahrer WHERE Teamname = ? ORDER BY MitarbeiterID"
+        "SELECT MitarbeiterID, Vorname, Nachname, Ort, PLZ, Strasse, HausNr 
+         FROM Fahrer WHERE Teamname = ? ORDER BY Nachname, Vorname"
     );
     $stmt->execute([$teamname]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -32,7 +34,7 @@ function fahrerLaden($verbindung, $teamname)
 function fahrerLadenEinzeln($verbindung, $mitarbeiterID, $teamname)
 {
     $stmt = $verbindung->prepare(
-        "SELECT MitarbeiterID, Ort, PLZ, Strasse, HausNr 
+        "SELECT MitarbeiterID, Vorname, Nachname, Ort, PLZ, Strasse, HausNr 
          FROM Fahrer WHERE MitarbeiterID = ? AND Teamname = ?"
     );
     $stmt->execute([$mitarbeiterID, $teamname]);
@@ -41,8 +43,44 @@ function fahrerLadenEinzeln($verbindung, $mitarbeiterID, $teamname)
 
 function fahrerLoeschen($verbindung, $mitarbeiterID, $teamname)
 {
+    // Zuerst Telefonnummern entfernen (falls kein CASCADE definiert)
+    $stmt = $verbindung->prepare(
+        "DELETE FROM Telefonnummern WHERE MitarbeiterID = ? AND Teamname = ?"
+    );
+    $stmt->execute([$mitarbeiterID, $teamname]);
+
     $stmt = $verbindung->prepare(
         "DELETE FROM Fahrer WHERE MitarbeiterID = ? AND Teamname = ?"
     );
     $stmt->execute([$mitarbeiterID, $teamname]);
+}
+
+// Telefonnummern eines Fahrers laden
+function telefonnummernLaden($verbindung, $mitarbeiterID, $teamname)
+{
+    $stmt = $verbindung->prepare(
+        "SELECT Telefonnummer FROM Telefonnummern 
+         WHERE MitarbeiterID = ? AND Teamname = ? ORDER BY Telefonnummer"
+    );
+    $stmt->execute([$mitarbeiterID, $teamname]);
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
+// Telefonnummern komplett ersetzen (alte raus, neue rein)
+function telefonnummernSpeichern($verbindung, $mitarbeiterID, $teamname, array $nummern)
+{
+    $stmt = $verbindung->prepare(
+        "DELETE FROM Telefonnummern WHERE MitarbeiterID = ? AND Teamname = ?"
+    );
+    $stmt->execute([$mitarbeiterID, $teamname]);
+
+    $stmt = $verbindung->prepare(
+        "INSERT INTO Telefonnummern (MitarbeiterID, Teamname, Telefonnummer) VALUES (?, ?, ?)"
+    );
+    foreach ($nummern as $nr) {
+        $nr = trim($nr);
+        if ($nr !== '') {
+            $stmt->execute([$mitarbeiterID, $teamname, $nr]);
+        }
+    }
 }
