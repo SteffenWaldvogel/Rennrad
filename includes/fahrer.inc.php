@@ -43,16 +43,23 @@ function fahrerLadenEinzeln($verbindung, $mitarbeiterID, $teamname)
 
 function fahrerLoeschen($verbindung, $mitarbeiterID, $teamname)
 {
-    // Zuerst Telefonnummern entfernen (falls kein CASCADE definiert)
-    $stmt = $verbindung->prepare(
-        "DELETE FROM Telefonnummern WHERE MitarbeiterID = ? AND Teamname = ?"
-    );
-    $stmt->execute([$mitarbeiterID, $teamname]);
+    $verbindung->beginTransaction();
+    try {
+        $stmt = $verbindung->prepare(
+            "DELETE FROM Telefonnummern WHERE MitarbeiterID = ? AND Teamname = ?"
+        );
+        $stmt->execute([$mitarbeiterID, $teamname]);
 
-    $stmt = $verbindung->prepare(
-        "DELETE FROM Fahrer WHERE MitarbeiterID = ? AND Teamname = ?"
-    );
-    $stmt->execute([$mitarbeiterID, $teamname]);
+        $stmt = $verbindung->prepare(
+            "DELETE FROM Fahrer WHERE MitarbeiterID = ? AND Teamname = ?"
+        );
+        $stmt->execute([$mitarbeiterID, $teamname]);
+
+        $verbindung->commit();
+    } catch (Exception $e) {
+        $verbindung->rollBack();
+        throw $e;
+    }
 }
 
 // Telefonnummern eines Fahrers laden

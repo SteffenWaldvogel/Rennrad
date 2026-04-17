@@ -26,7 +26,7 @@ if (!isset($_SESSION['teamchef_login'])) {
     <a href="anmeldung.php">Rennanmeldung</a><br>
     <a href="auswertung.php">Auswertung</a><br><br>
 
-    <a href="logout.php">Abmelden</a>
+    <a href="../index.php?logout=1">Abmelden</a>
 </body>
 
 </html>

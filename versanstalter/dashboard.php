@@ -24,7 +24,7 @@ if (!isset($_SESSION['veranstalter_name'])) {
     <a href="rennen.php">Rennen anlegen</a><br>
     <a href="ergebnisse.php">Ergebnisse erfassen</a><br><br>
 
-    <a href="logout.php">Abmelden</a>
+    <a href="../index.php?logout=1">Abmelden</a>
 </body>
 
 </html>

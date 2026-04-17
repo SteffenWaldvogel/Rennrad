@@ -39,9 +39,16 @@ if (isset($_POST['loeschen'])) {
     if (empty($vorname) || empty($nachname) || empty($ort) || empty($plz) || empty($strasse) || empty($hausnr)) {
         $fehler = "Bitte alle Pflichtfelder ausfüllen.";
     } else {
-        $neueID = fahrerSpeichern($verbindung, $mitarbeiterID, $teamname, $vorname, $nachname, $ort, $plz, $strasse, $hausnr, $isNeu);
-        telefonnummernSpeichern($verbindung, $neueID, $teamname, $telefonnummern);
-        $erfolg = $isNeu ? "Fahrer wurde angelegt." : "Fahrer wurde aktualisiert.";
+        $verbindung->beginTransaction();
+        try {
+            $neueID = fahrerSpeichern($verbindung, $mitarbeiterID, $teamname, $vorname, $nachname, $ort, $plz, $strasse, $hausnr, $isNeu);
+            telefonnummernSpeichern($verbindung, $neueID, $teamname, $telefonnummern);
+            $verbindung->commit();
+            $erfolg = $isNeu ? "Fahrer wurde angelegt." : "Fahrer wurde aktualisiert.";
+        } catch (Exception $e) {
+            $verbindung->rollBack();
+            $fehler = "Fehler beim Speichern des Fahrers.";
+        }
     }
 }
 
