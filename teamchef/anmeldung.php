@@ -45,6 +45,9 @@ $fahrer = fahrerLaden($verbindung, $teamname);
 
 $ausgewaehltesRennen = isset($_GET['rennen']) ? (int) $_GET['rennen'] : null;
 $rennenInfo = $ausgewaehltesRennen ? rennenLadenEinzeln($verbindung, $ausgewaehltesRennen) : null;
+
+// DEBUG — nach dem Testen entfernen
+echo "<!-- DEBUG: teamname='$teamname', ausgewaehltesRennen='$ausgewaehltesRennen', rennenInfo=" . ($rennenInfo ? 'OK' : 'NULL') . ", fahrer=" . count($fahrer) . " -->";
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -121,6 +124,10 @@ $rennenInfo = $ausgewaehltesRennen ? rennenLadenEinzeln($verbindung, $ausgewaehl
 
     <?php else: ?>
         <!-- Formular zum Anmelden für ein konkretes Rennen -->
+        <?php if (!$rennenInfo): ?>
+            <p style="color:red;">Rennen nicht gefunden.</p>
+            <a href="anmeldung.php">← Zurück zur Übersicht</a>
+        <?php else: ?>
         <h2>Fahrer anmelden für: <?= htmlspecialchars($rennenInfo['Datum'] . ' - ' . $rennenInfo['Standort']) ?></h2>
         <a href="anmeldung.php">← Zurück zur Übersicht</a>
 
@@ -148,6 +155,7 @@ $rennenInfo = $ausgewaehltesRennen ? rennenLadenEinzeln($verbindung, $ausgewaehl
                 <input type="submit" value="Anmeldungen speichern">
             </form>
             <p><em>Hinweis: Die Startnummern werden automatisch aufsteigend ab 1 vergeben.</em></p>
+        <?php endif; ?>
         <?php endif; ?>
     <?php endif; ?>
 </body>
