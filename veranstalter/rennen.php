@@ -1,6 +1,6 @@
 <?php
 // Autor: Elias
-// Rennen anlegen und Liste der eigenen Rennen
+
 include '../includes/db.inc.php';
 include '../includes/rennen.inc.php';
 session_start();

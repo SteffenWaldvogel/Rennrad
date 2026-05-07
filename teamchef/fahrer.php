@@ -4,7 +4,7 @@ include '../includes/db.inc.php';
 include '../includes/fahrer.inc.php';
 session_start();
 
-// Zugriff nur für eingeloggte Teamchefs
+
 if (!isset($_SESSION['teamchef_login'])) {
     header('Location: ../teamchef_login.php');
     exit;
@@ -14,7 +14,7 @@ $teamname = $_SESSION['teamchef_teamname'];
 $fehler = "";
 $erfolg = "";
 
-// Fahrer löschen
+
 if (isset($_POST['loeschen'])) {
     $mitarbeiterID = (int) $_POST['loeschen'];
     try {
@@ -24,7 +24,7 @@ if (isset($_POST['loeschen'])) {
         $fehler = "Fahrer kann nicht gelöscht werden, da er noch für Rennen angemeldet ist.";
     }
 
-    // Formular abgeschickt (Anlegen oder Ändern)
+    
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mitarbeiterID = isset($_POST['mitarbeiterID']) ? (int) $_POST['mitarbeiterID'] : null;
     $vorname = trim($_POST['vorname']);
@@ -52,7 +52,7 @@ if (isset($_POST['loeschen'])) {
     }
 }
 
-// Fahrer zum Bearbeiten laden
+
 $fahrerBearbeiten = null;
 $telefonBearbeiten = [];
 if (isset($_GET['bearbeiten'])) {
@@ -62,7 +62,7 @@ if (isset($_GET['bearbeiten'])) {
     }
 }
 
-// Alle Fahrer des Teams laden
+
 $fahrer = fahrerLaden($verbindung, $teamname);
 ?>
 <!DOCTYPE html>
@@ -121,7 +121,7 @@ $fahrer = fahrerLaden($verbindung, $teamname);
 
         <label>Telefonnummern:</label><br>
         <?php
-        // Immer mindestens 3 Eingabefelder anzeigen, ggf. mehr wenn schon welche vorhanden
+
         $anzahlFelder = max(3, count($telefonBearbeiten) + 1);
         for ($i = 0; $i < $anzahlFelder; $i++):
             $wert = isset($telefonBearbeiten[$i]) ? htmlspecialchars($telefonBearbeiten[$i]) : '';

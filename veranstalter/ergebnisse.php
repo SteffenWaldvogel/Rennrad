@@ -45,7 +45,7 @@ $rennenInfo = null;
 $anmeldungen = [];
 if ($ausgewaehltesRennen) {
     $rennenInfo = rennenLadenEinzeln($verbindung, $ausgewaehltesRennen);
-    // Sicherheit: nur eigene Rennen
+   
     if ($rennenInfo && $rennenInfo['RennveranstalterName'] === $veranstalterName) {
         $anmeldungen = anmeldungenLaden($verbindung, $ausgewaehltesRennen);
     } else {

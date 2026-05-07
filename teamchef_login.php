@@ -3,7 +3,7 @@
 include 'includes/db.inc.php';
 session_start();
 
-// Falls bereits eingeloggt, direkt weiterleiten
+
 if (isset($_SESSION['teamchef_login'])) {
     header('Location: teamchef/dashboard.php');
     exit;

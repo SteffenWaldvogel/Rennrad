@@ -69,7 +69,7 @@ function fahrerAnmelden($verbindung, $radrennenID, $teamname, array $mitarbeiter
 {
     $verbindung->beginTransaction();
     try {
-        // Prüfen, dass alle Fahrer wirklich zu diesem Team gehören
+        
         $checkStmt = $verbindung->prepare(
             "SELECT COUNT(*) FROM Fahrer WHERE MitarbeiterID = ? AND Teamname = ?"
         );

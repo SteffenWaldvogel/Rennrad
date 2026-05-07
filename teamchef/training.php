@@ -3,7 +3,6 @@
 include '../includes/db.inc.php';
 session_start();
 
-// Zugriff nur für eingeloggte Teamchefs
 if (!isset($_SESSION['teamchef_login'])) {
     header('Location: ../teamchef_login.php');
     exit;
@@ -13,12 +12,10 @@ $teamname = $_SESSION['teamchef_teamname'];
 $fehler = "";
 $erfolg = "";
 
-// Trainingsziele laden
 $stmt = $verbindung->prepare("SELECT Ziel FROM Trainingsziel ORDER BY Ziel");
 $stmt->execute();
 $trainingsziele = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fahrer des Teams laden 
 $stmt = $verbindung->prepare("SELECT MitarbeiterID, Vorname, Nachname FROM Fahrer WHERE Teamname = ? ORDER BY Nachname, Vorname");
 $stmt->execute([$teamname]);
 $fahrer = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -32,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($datum) || empty($ziel) || empty($mitarbeiterID) || $km <= 0) {
         $fehler = "Bitte alle Felder ausfüllen.";
     } else {
-        // Prüfen ob Fahrer an diesem Tag bereits trainiert hat
+        
         $stmt = $verbindung->prepare(
             "SELECT Datum FROM Trainings WHERE Datum = ? AND MitarbeiterID = ? AND Teamname = ?"
         );

@@ -120,7 +120,7 @@ $rennenInfo = $ausgewaehltesRennen ? rennenLadenEinzeln($verbindung, $ausgewaehl
         <?php endif; ?>
 
     <?php else: ?>
-        <!-- Formular zum Anmelden für ein konkretes Rennen -->
+        
         <?php if (!$rennenInfo): ?>
             <p style="color:red;">Rennen nicht gefunden.</p>
             <a href="anmeldung.php">← Zurück zur Übersicht</a>
