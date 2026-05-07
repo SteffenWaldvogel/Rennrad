@@ -1,5 +1,3 @@
-
-
 <?php
 // Autor: Steffen Waldvogel
 ini_set('display_errors', 1);
