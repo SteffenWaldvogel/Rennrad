@@ -1,8 +1,9 @@
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+
 
 <?php
 // Autor: Steffen Waldvogel
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 $username = "gruppe3";
 $password = "{3Ln~NWH21A=";
 $host = "92.205.168.232";
