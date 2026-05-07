@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($veranstalter && password_verify($kennwort, $veranstalter['Kennwort'])) {
         $_SESSION['veranstalter_name'] = $veranstalter['Name'];
-        header('Location: versanstalter/dashboard.php');
+        header('Location: veranstalter/dashboard.php');
         exit;
     } else {
         $fehler = "Name oder Kennwort falsch.";
