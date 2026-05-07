@@ -45,9 +45,6 @@ $fahrer = fahrerLaden($verbindung, $teamname);
 
 $ausgewaehltesRennen = isset($_GET['rennen']) ? (int) $_GET['rennen'] : null;
 $rennenInfo = $ausgewaehltesRennen ? rennenLadenEinzeln($verbindung, $ausgewaehltesRennen) : null;
-
-// DEBUG — nach dem Testen entfernen
-echo "<!-- DEBUG: teamname='$teamname', ausgewaehltesRennen='$ausgewaehltesRennen', rennenInfo=" . ($rennenInfo ? 'OK' : 'NULL') . ", fahrer=" . count($fahrer) . " -->";
 ?>
 <!DOCTYPE html>
 <html lang="de">
