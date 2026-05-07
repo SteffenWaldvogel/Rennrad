@@ -1,16 +1,22 @@
 <?php
 // Autor: Steffen Waldvogel
 
-// Speichert oder ändert einen Fahrer; gibt die MitarbeiterID zurück
 function fahrerSpeichern($verbindung, $mitarbeiterID, $teamname, $vorname, $nachname, $ort, $plz, $strasse, $hausnr, $isNeu)
 {
     if ($isNeu) {
+        // Trigger setzt MitarbeiterID automatisch (max+1 pro Team)
         $stmt = $verbindung->prepare(
-            "INSERT INTO Fahrer (Vorname, Nachname, Ort, PLZ, Strasse, HausNr, Teamname)
-             VALUES (?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO Fahrer (MitarbeiterID, Vorname, Nachname, Ort, PLZ, Strasse, HausNr, Teamname)
+             VALUES (0, ?, ?, ?, ?, ?, ?, ?)"
         );
         $stmt->execute([$vorname, $nachname, $ort, $plz, $strasse, $hausnr, $teamname]);
-        return (int) $verbindung->lastInsertId();
+
+        // Höchste MitarbeiterID des Teams ist der eben angelegte Fahrer
+        $stmt = $verbindung->prepare(
+            "SELECT MAX(MitarbeiterID) FROM Fahrer WHERE Teamname = ?"
+        );
+        $stmt->execute([$teamname]);
+        return (int) $stmt->fetchColumn();
     } else {
         $stmt = $verbindung->prepare(
             "UPDATE Fahrer SET Vorname = ?, Nachname = ?, Ort = ?, PLZ = ?, Strasse = ?, HausNr = ?
@@ -62,7 +68,6 @@ function fahrerLoeschen($verbindung, $mitarbeiterID, $teamname)
     }
 }
 
-// Telefonnummern eines Fahrers laden
 function telefonnummernLaden($verbindung, $mitarbeiterID, $teamname)
 {
     $stmt = $verbindung->prepare(
@@ -73,7 +78,6 @@ function telefonnummernLaden($verbindung, $mitarbeiterID, $teamname)
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
-// Telefonnummern komplett ersetzen (alte raus, neue rein)
 function telefonnummernSpeichern($verbindung, $mitarbeiterID, $teamname, array $nummern)
 {
     $stmt = $verbindung->prepare(

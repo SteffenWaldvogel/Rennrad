@@ -11,7 +11,6 @@ function rennenAnlegen($verbindung, $datum, $standort, $zuFahrendeKm, $hoehenmet
     return (int) $verbindung->lastInsertId();
 }
 
-
 function rennenLadenFuerVeranstalter($verbindung, $veranstalterName)
 {
     $stmt = $verbindung->prepare(
@@ -21,7 +20,6 @@ function rennenLadenFuerVeranstalter($verbindung, $veranstalterName)
     $stmt->execute([$veranstalterName]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
-
 
 function rennenLadenZukuenftig($verbindung)
 {
@@ -43,7 +41,6 @@ function rennenLadenEinzeln($verbindung, $radrennenID)
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-
 function anmeldungenLaden($verbindung, $radrennenID)
 {
     $stmt = $verbindung->prepare(
@@ -58,7 +55,6 @@ function anmeldungenLaden($verbindung, $radrennenID)
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-
 function anmeldungenLadenFuerTeam($verbindung, $radrennenID, $teamname)
 {
     $stmt = $verbindung->prepare(
@@ -69,19 +65,28 @@ function anmeldungenLadenFuerTeam($verbindung, $radrennenID, $teamname)
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-
 function fahrerAnmelden($verbindung, $radrennenID, $teamname, array $mitarbeiterIDs)
 {
     $verbindung->beginTransaction();
     try {
-        $stmt = $verbindung->prepare(
+        // Prüfen, dass alle Fahrer wirklich zu diesem Team gehören
+        $checkStmt = $verbindung->prepare(
+            "SELECT COUNT(*) FROM Fahrer WHERE MitarbeiterID = ? AND Teamname = ?"
+        );
+
+        $insertStmt = $verbindung->prepare(
             "INSERT INTO nimmt_teil (RadrennenID, MitarbeiterID, Teamname) VALUES (?, ?, ?)"
         );
-        foreach ($mitarbeiterIDs as $id) {
-            $id = (int) $id;
-            if ($id > 0) {
-                $stmt->execute([$radrennenID, $id, $teamname]);
+
+        $eindeutigeIDs = array_unique(array_filter(array_map('intval', $mitarbeiterIDs)));
+
+        foreach ($eindeutigeIDs as $id) {
+            if ($id <= 0) continue;
+            $checkStmt->execute([$id, $teamname]);
+            if ($checkStmt->fetchColumn() == 0) {
+                throw new Exception("Fahrer ID $id gehört nicht zum Team.");
             }
+            $insertStmt->execute([$radrennenID, $id, $teamname]);
         }
         $verbindung->commit();
     } catch (Exception $e) {
@@ -89,7 +94,6 @@ function fahrerAnmelden($verbindung, $radrennenID, $teamname, array $mitarbeiter
         throw $e;
     }
 }
-
 
 function ergebnisseSpeichern($verbindung, $radrennenID, array $ergebnisse)
 {
@@ -111,4 +115,10 @@ function ergebnisseSpeichern($verbindung, $radrennenID, array $ergebnisse)
         $verbindung->rollBack();
         throw $e;
     }
+}
+
+function anmeldungenKopieren($verbindung, $vonRennen, $nachRennen, $teamname)
+{
+    $stmt = $verbindung->prepare("CALL sp_anmeldungen_kopieren(?, ?, ?)");
+    $stmt->execute([$vonRennen, $nachRennen, $teamname]);
 }
