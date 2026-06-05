@@ -20,20 +20,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['radrennenID'])) {
     if (!$rennenInfo || $rennenInfo['RennveranstalterName'] !== $veranstalterName) {
         $fehler = "Zugriff verweigert.";
     } else {
-        $ergebnisse = [];
-        if (isset($_POST['platz']) && isset($_POST['zeit'])) {
-            foreach ($_POST['platz'] as $startnummer => $platz) {
-                $ergebnisse[(int) $startnummer] = [
-                    'platz' => (int) $platz,
-                    'zeit' => (int) $_POST['zeit'][$startnummer]
-                ];
+        // NEUE PRÜFUNG: Sind bereits Ergebnisse eingetragen?
+        $stmt = $verbindung->prepare(
+            "SELECT COUNT(*) FROM nimmt_teil 
+             WHERE RadrennenID = ? AND Platzierung IS NOT NULL"
+        );
+        $stmt->execute([$radrennenID]);
+        $ergebnisseExistieren = $stmt->fetchColumn() > 0;
+
+        if ($ergebnisseExistieren) {
+            // ERGEBNISSE BEREITS VORHANDEN → NICHT ÜBERSCHREIBEN
+            $fehler = "Ergebnisse für dieses Rennen wurden bereits eingetragen. Die Erfassung ist ein einmaliger Vorgang und kann nicht verändert werden.";
+        } else {
+            // ERSTE EINTRAGUNG → SPEICHERN
+            $ergebnisse = [];
+            if (isset($_POST['platz']) && isset($_POST['zeit'])) {
+                foreach ($_POST['platz'] as $startnummer => $platz) {
+                    $ergebnisse[(int) $startnummer] = [
+                        'platz' => (int) $platz,
+                        'zeit' => (int) $_POST['zeit'][$startnummer]
+                    ];
+                }
             }
-        }
-        try {
-            ergebnisseSpeichern($verbindung, $radrennenID, $ergebnisse);
-            $erfolg = "Ergebnisse wurden gespeichert.";
-        } catch (Exception $e) {
-            $fehler = "Fehler beim Speichern: " . $e->getMessage();
+            try {
+                ergebnisseSpeichern($verbindung, $radrennenID, $ergebnisse);
+                $erfolg = "Ergebnisse wurden gespeichert.";
+            } catch (Exception $e) {
+                $fehler = "Fehler beim Speichern: " . $e->getMessage();
+            }
         }
     }
 }
@@ -43,11 +57,21 @@ $rennen = rennenLadenFuerVeranstalter($verbindung, $veranstalterName);
 $ausgewaehltesRennen = isset($_GET['rennen']) ? (int) $_GET['rennen'] : null;
 $rennenInfo = null;
 $anmeldungen = [];
+$ergebnisseExistieren = false; // Für die Anzeige
+
 if ($ausgewaehltesRennen) {
     $rennenInfo = rennenLadenEinzeln($verbindung, $ausgewaehltesRennen);
     // Sicherheit: nur eigene Rennen
     if ($rennenInfo && $rennenInfo['RennveranstalterName'] === $veranstalterName) {
         $anmeldungen = anmeldungenLaden($verbindung, $ausgewaehltesRennen);
+        
+        // PRÜFUNG: Sind bereits Ergebnisse eingetragen?
+        $stmt = $verbindung->prepare(
+            "SELECT COUNT(*) FROM nimmt_teil 
+             WHERE RadrennenID = ? AND Platzierung IS NOT NULL"
+        );
+        $stmt->execute([$ausgewaehltesRennen]);
+        $ergebnisseExistieren = $stmt->fetchColumn() > 0;
     } else {
         $rennenInfo = null;
     }
@@ -102,7 +126,44 @@ if ($ausgewaehltesRennen) {
 
         <?php if (empty($anmeldungen)): ?>
             <p>Keine Fahrer für dieses Rennen angemeldet.</p>
+        
+        <?php elseif ($ergebnisseExistieren): ?>
+            <!-- ERGEBNISSE BEREITS EINGETRAGEN → FORMULAR NICHT ANZEIGEN -->
+            <div>
+                <h3>Ergebnisse bereits eingetragen</h3>
+                <p>
+                    <strong>Die Ergebnisse für dieses Rennen wurden bereits eingetragen.</strong>
+                </p>
+                <p>
+                    Die Erfassung ist ein einmaliger Vorgang und kann nicht verändert werden.
+                </p>
+                <p>
+                    Falls Sie die Ergebnisse doch ändern müssen, kontaktieren Sie bitte den Administrator.
+                </p>
+            </div>
+
+            <h3>Eingetragene Ergebnisse:</h3>
+            <table border="1">
+                <tr>
+                    <th>Startnummer</th>
+                    <th>Fahrer</th>
+                    <th>Team</th>
+                    <th>Platzierung</th>
+                    <th>Fahrzeit (Sekunden)</th>
+                </tr>
+                <?php foreach ($anmeldungen as $a): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($a['Startnummer']) ?></td>
+                        <td><?= htmlspecialchars($a['Nachname'] . ', ' . $a['Vorname']) ?></td>
+                        <td><?= htmlspecialchars($a['Teamname']) ?></td>
+                        <td><?= htmlspecialchars($a['Platzierung'] !== null ? $a['Platzierung'] : '-') ?></td>
+                        <td><?= htmlspecialchars($a['Fahrzeit'] !== null ? $a['Fahrzeit'] : '-') ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </table>
+
         <?php else: ?>
+            <!-- NOCH KEINE ERGEBNISSE → FORMULAR ANZEIGEN -->
             <form action="ergebnisse.php" method="post">
                 <input type="hidden" name="radrennenID" value="<?= $ausgewaehltesRennen ?>">
 
@@ -133,7 +194,7 @@ if ($ausgewaehltesRennen) {
                 <br>
                 <input type="submit" value="Ergebnisse speichern">
             </form>
-            <p><em>Hinweis: Die Erfassung ist ein einmaliger Vorgang.</em></p>
+            <p><em>Hinweis: Die Erfassung ist ein einmaliger Vorgang und kann nicht verändert werden.</em></p>
         <?php endif; ?>
     <?php endif; ?>
 </body>
