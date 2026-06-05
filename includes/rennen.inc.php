@@ -133,3 +133,37 @@ function anmeldungenKopieren($verbindung, $vonRennen, $nachRennen, $teamname)
     $stmt = $verbindung->prepare("CALL sp_anmeldungen_kopieren(?, ?, ?)");
     $stmt->execute([$vonRennen, $nachRennen, $teamname]);
 }
+
+// ✅ NEUE FUNKTIONEN - FÜR TEAMCHEF RENNERGEBNISSE ANSCHAUEN
+
+// Alle Rennen mit Anmeldungen eines Teams laden
+function rennenLadenMitAnmeldungen($verbindung, $teamname)
+{
+    $stmt = $verbindung->prepare(
+        "SELECT DISTINCT r.RadrennenID, r.Datum, r.Standort, 
+                r.ZuFahrendeKilometer, r.AnzahlFahrendeKilometer, r.MaxSteigung,
+                COUNT(n.MitarbeiterID) as AnzahlFahrer
+         FROM Radrennen r
+         JOIN nimmt_teil n ON r.RadrennenID = n.RadrennenID
+         WHERE n.Teamname = ?
+         GROUP BY r.RadrennenID
+         ORDER BY r.Datum DESC"
+    );
+    $stmt->execute([$teamname]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Ergebnisse für ein Rennen und ein Team laden
+function ergebnisseLadenFuerTeam($verbindung, $radrennenID, $teamname)
+{
+    $stmt = $verbindung->prepare(
+        "SELECT n.Startnummer, n.Platzierung, n.Fahrzeit,
+                f.MitarbeiterID, f.Vorname, f.Nachname
+         FROM nimmt_teil n
+         JOIN Fahrer f ON n.MitarbeiterID = f.MitarbeiterID AND n.Teamname = f.Teamname
+         WHERE n.RadrennenID = ? AND f.Teamname = ?
+         ORDER BY n.Startnummer"
+    );
+    $stmt->execute([$radrennenID, $teamname]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
