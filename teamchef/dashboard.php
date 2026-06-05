@@ -24,7 +24,8 @@ if (!isset($_SESSION['teamchef_login'])) {
     <a href="fahrer.php">Fahrerverwaltung</a><br>
     <a href="training.php">Training erfassen</a><br>
     <a href="anmeldung.php">Rennanmeldung</a><br>
-    <a href="auswertung.php">Auswertung</a><br><br>
+    <a href="auswertung.php">Auswertung</a><br>
+    <a href="ergebnisse.php">Rennergebnisse anschauen</a><br><br>
 
     <a href="../index.php?logout=1">Abmelden</a>
 </body>
