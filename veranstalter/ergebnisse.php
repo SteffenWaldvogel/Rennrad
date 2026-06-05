@@ -137,9 +137,6 @@ if ($ausgewaehltesRennen) {
                 <p>
                     Die Erfassung ist ein einmaliger Vorgang und kann nicht verändert werden.
                 </p>
-                <p>
-                    Falls Sie die Ergebnisse doch ändern müssen, kontaktieren Sie bitte den Administrator.
-                </p>
             </div>
 
             <h3>Eingetragene Ergebnisse:</h3>
