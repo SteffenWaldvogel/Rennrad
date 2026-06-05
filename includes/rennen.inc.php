@@ -69,9 +69,13 @@ function fahrerAnmelden($verbindung, $radrennenID, $teamname, array $mitarbeiter
 {
     $verbindung->beginTransaction();
     try {
-        
         $checkStmt = $verbindung->prepare(
             "SELECT COUNT(*) FROM Fahrer WHERE MitarbeiterID = ? AND Teamname = ?"
+        );
+
+        $checkAnmeldung = $verbindung->prepare(
+            "SELECT COUNT(*) FROM nimmt_teil
+             WHERE RadrennenID = ? AND MitarbeiterID = ? AND Teamname = ?"
         );
 
         $insertStmt = $verbindung->prepare(
@@ -82,10 +86,17 @@ function fahrerAnmelden($verbindung, $radrennenID, $teamname, array $mitarbeiter
 
         foreach ($eindeutigeIDs as $id) {
             if ($id <= 0) continue;
+
             $checkStmt->execute([$id, $teamname]);
             if ($checkStmt->fetchColumn() == 0) {
                 throw new Exception("Fahrer ID $id gehört nicht zum Team.");
             }
+
+            $checkAnmeldung->execute([$radrennenID, $id, $teamname]);
+            if ($checkAnmeldung->fetchColumn() > 0) {
+                throw new Exception("Fahrer ID $id ist bereits für dieses Rennen angemeldet.");
+            }
+
             $insertStmt->execute([$radrennenID, $id, $teamname]);
         }
         $verbindung->commit();

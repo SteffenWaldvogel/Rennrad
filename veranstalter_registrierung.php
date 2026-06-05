@@ -3,7 +3,7 @@
 include 'includes/db.inc.php';
 session_start();
 
-
+// Falls bereits eingeloggt, direkt weiterleiten
 if (isset($_SESSION['veranstalter_name'])) {
     header('Location: veranstalter/dashboard.php');
     exit;
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($name) || empty($kennwort)) {
         $fehler = "Bitte alle Felder ausfüllen.";
     } else {
-        
+        // Prüfen ob Name bereits existiert
         $stmt = $verbindung->prepare("SELECT Name FROM Rennveranstalter WHERE Name = ?");
         $stmt->execute([$name]);
 
