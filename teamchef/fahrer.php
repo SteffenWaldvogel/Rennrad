@@ -1,5 +1,5 @@
 <?php
-// Autor: Steffen Waldvogel
+// Autor: Henrik Bähr
 include '../includes/db.inc.php';
 include '../includes/fahrer.inc.php';
 session_start();

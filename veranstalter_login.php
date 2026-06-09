@@ -1,5 +1,5 @@
 <?php
-// Autor: Steffen Waldvogel
+// Autor: Elias Freudemann
 include 'includes/db.inc.php';
 session_start();
 

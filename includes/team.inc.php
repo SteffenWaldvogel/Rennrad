@@ -1,5 +1,5 @@
 <?php
-// Autor: Steffen Waldvogel
+// Autor: Henrik Bähr
 
 // Prüft ob ein Team bereits existiert
 function teamExistiert($verbindung, $teamname)

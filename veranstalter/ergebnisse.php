@@ -1,5 +1,5 @@
 <?php
-// Autor: Henrik Bähr
+// Autor: Steffen Waldvogel
 include '../includes/db.inc.php';
 include '../includes/rennen.inc.php';
 session_start();

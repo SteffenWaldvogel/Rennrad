@@ -1,5 +1,5 @@
 <?php
-// Autor: Elias
+// Autor: Elias Freudemann
 // Rennen anlegen und Liste der eigenen Rennen
 include '../includes/db.inc.php';
 include '../includes/rennen.inc.php';

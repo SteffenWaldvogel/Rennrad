@@ -1,5 +1,5 @@
 <?php
-// Autor: Steffen Waldvogel
+// Autor: Elias Freudemann
 session_start();
 
 // Zugriff nur für eingeloggte Veranstalter

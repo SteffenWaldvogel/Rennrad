@@ -1,5 +1,5 @@
 <?php
-// Autor: Steffen Waldvogel
+// Autor: Henrik Bähr
 
 function fahrerSpeichern($verbindung, $mitarbeiterID, $teamname, $vorname, $nachname, $ort, $plz, $strasse, $hausnr, $isNeu)
 {

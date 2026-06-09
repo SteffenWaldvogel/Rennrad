@@ -1,5 +1,5 @@
 <?php
-// Autor: Steffen Waldvogel
+// Autor: Henrik Bähr
 session_start();
 // Zugriff nur für eingeloggte Teamchefs
 if (!isset($_SESSION['teamchef_login'])) {

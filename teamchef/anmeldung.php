@@ -1,5 +1,5 @@
 <?php
-// Autor: Henrik Bähr
+// Autor: Elias Freudemann
 include '../includes/db.inc.php';
 include '../includes/fahrer.inc.php';
 include '../includes/rennen.inc.php';

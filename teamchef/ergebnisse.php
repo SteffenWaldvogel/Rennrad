@@ -1,5 +1,5 @@
 <?php
-// Autor: Person 1 (Teamchef-Verwaltung)
+// Autor: Steffen Waldvogel
 include '../includes/db.inc.php';
 include '../includes/rennen.inc.php';
 session_start();

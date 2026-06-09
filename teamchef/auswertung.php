@@ -1,5 +1,5 @@
 <?php
-// Autor: Henrik Bähr
+// Autor: Steffen Waldvogel
 include '../includes/db.inc.php';
 include '../includes/fahrer.inc.php';
 include '../includes/auswertung.class.php';
