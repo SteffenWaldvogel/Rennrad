@@ -1,149 +1,108 @@
-<?php
 // Autor: Steffen Waldvogel
-include '../includes/db.inc.php';
-include '../includes/rennen.inc.php';
+<?php
 session_start();
 
-if (!isset($_SESSION['teamchef_login'])) {
+require_once '../includes/db.inc.php';
+require_once '../includes/rennen.inc.php';
+require_once '../includes/ergebnisse.inc.php';
+
+$teamname = $_SESSION['teamchef_teamname'] ?? null;
+
+if (!$teamname) {
     header('Location: ../teamchef_login.php');
     exit;
 }
 
-$teamname = $_SESSION['teamchef_teamname'];
+$radrennenID = (int) $_GET['id'] ?? 0;
 
-// Rennen mit Anmeldungen laden
-$rennenMitAnmeldungen = rennenLadenMitAnmeldungen($verbindung, $teamname);
+if ($radrennenID == 0) {
+    die("Ungültige Rennen-ID");
+}
 
-// Wenn Rennen ausgewählt: Ergebnisse laden
-$ausgewaehltesRennen = isset($_GET['rennen']) ? (int) $_GET['rennen'] : null;
-$rennenInfo = null;
-$fahrerErgebnisse = [];
-$ergebnisseVorhanden = false;
-
-if ($ausgewaehltesRennen) {
-    $rennenInfo = rennenLadenEinzeln($verbindung, $ausgewaehltesRennen);
-    
-    // Nur wenn Rennen existiert
-    if ($rennenInfo) {
-        // Ergebnisse für dieses Team laden
-        $fahrerErgebnisse = ergebnisseLadenFuerTeam($verbindung, $ausgewaehltesRennen, $teamname);
-        
-        // Prüfen ob Ergebnisse vorhanden sind
-        $ergebnisseVorhanden = false;
-        foreach ($fahrerErgebnisse as $fahrer) {
-            if ($fahrer['Platzierung'] !== null) {
-                $ergebnisseVorhanden = true;
-                break;
-            }
-        }
+try {
+    $rennen = rennenMitErgebnisstatus($verbindung, $radrennenID);
+    if (!$rennen) {
+        die("Rennen nicht gefunden!");
     }
+    
+    $teamErgebnisse = teamErgebnisseLaden($verbindung, $radrennenID, $teamname);
+} catch (Exception $e) {
+    die("Fehler beim Laden der Daten: " . htmlspecialchars($e->getMessage()));
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rennergebnisse</title>
+    <title>Meine Ergebnisse: <?php echo htmlspecialchars($rennen['Name']); ?></title>
 </head>
-
 <body>
-    <a href="dashboard.php">Zurück zum Dashboard</a>
-    <h1>Rennergebnisse</h1>
-    <p>Team: <?= htmlspecialchars($teamname) ?></p>
 
-    <?php if (!$ausgewaehltesRennen): ?>
-        <h2>Rennen mit Anmeldungen</h2>
-        
-        <?php if (empty($rennenMitAnmeldungen)): ?>
-            <p>Ihr Team hat noch keine Rennen-Anmeldungen.</p>
-        <?php else: ?>
-            <table border="1">
+<div class="container">
+    <h1>Meine Ergebnisse: <?php echo htmlspecialchars($rennen['Name']); ?></h1>
+    
+    <div class="info">
+        <div class="info-item">
+            <span class="info-label">Datum:</span>
+            <?php echo htmlspecialchars($rennen['Datum']); ?>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Veranstalter:</span>
+            <?php echo htmlspecialchars($rennen['Rennveranstalter']); ?>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Team:</span>
+            <?php echo htmlspecialchars($teamname); ?>
+        </div>
+    </div>
+    
+    <?php if (empty($teamErgebnisse)): ?>
+        <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p>Dein Team hat sich nicht für dieses Rennen angemeldet.</p>
+        </div>
+    <?php else: ?>
+        <h2>Fahrer (<?php echo count($teamErgebnisse); ?>)</h2>
+        <table>
+            <thead>
                 <tr>
-                    <th>Datum</th>
-                    <th>Standort</th>
-                    <th>Strecke (km)</th>
-                    <th>Angemeldete Fahrer</th>
-                    <th>Aktion</th>
+                    <th>Platzierung</th>
+                    <th>Startnummer</th>
+                    <th>Vorname</th>
+                    <th>Nachname</th>
+                    <th>Status</th>
                 </tr>
-                <?php foreach ($rennenMitAnmeldungen as $r): ?>
+            </thead>
+            <tbody>
+                <?php foreach ($teamErgebnisse as $fahrer): ?>
                     <tr>
-                        <td><?= htmlspecialchars($r['Datum']) ?></td>
-                        <td><?= htmlspecialchars($r['Standort']) ?></td>
-                        <td><?= htmlspecialchars($r['ZuFahrendeKilometer']) ?></td>
-                        <td><?= htmlspecialchars($r['AnzahlFahrer']) ?></td>
                         <td>
-                            <a href="ergebnisse.php?rennen=<?= $r['RadrennenID'] ?>">Ergebnisse anschauen</a>
+                            <?php if ($fahrer['Platzierung']): ?>
+                                <strong><?php echo htmlspecialchars($fahrer['Platzierung']); ?></strong>
+                            <?php else: ?>
+                                -
+                            <?php endif; ?>
+                        </td>
+                        <td><?php echo htmlspecialchars($fahrer['Startnummer']); ?></td>
+                        <td><?php echo htmlspecialchars($fahrer['Vorname']); ?></td>
+                        <td><?php echo htmlspecialchars($fahrer['Nachname']); ?></td>
+                        <td>
+                            <?php if ($fahrer['Platzierung']): ?>
+                                <span class="status-ok">✓ Eingegeben</span>
+                            <?php else: ?>
+                                <span class="status-pending">⏳ Ausstehend</span>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
-            </table>
-        <?php endif; ?>
-
-    <?php else: ?>
-        <?php if (!$rennenInfo): ?>
-            <p>Rennen nicht gefunden.</p>
-            <a href="ergebnisse.php">← Zurück zur Übersicht</a>
-        <?php else: ?>
-            <h2><?= htmlspecialchars($rennenInfo['Datum'] . ' - ' . $rennenInfo['Standort']) ?></h2>
-            <a href="ergebnisse.php">← Zurück zur Übersicht</a>
-
-            <h3>Rennen-Details</h3>
-            <ul>
-                <li><strong>Datum:</strong> <?= htmlspecialchars($rennenInfo['Datum']) ?></li>
-                <li><strong>Standort:</strong> <?= htmlspecialchars($rennenInfo['Standort']) ?></li>
-                <li><strong>Strecke:</strong> <?= htmlspecialchars($rennenInfo['ZuFahrendeKilometer']) ?> km</li>
-                <li><strong>Höhenmeter:</strong> <?= htmlspecialchars($rennenInfo['AnzahlFahrendeKilometer']) ?> m</li>
-                <li><strong>Max. Steigung:</strong> <?= htmlspecialchars($rennenInfo['MaxSteigung']) ?>%</li>
-            </ul>
-
-            <?php if (empty($fahrerErgebnisse)): ?>
-                <p>Keine Fahrer Ihres Teams sind für dieses Rennen angemeldet.</p>
-            <?php else: ?>
-                <h3>Ergebnisse Ihrer Fahrer</h3>
-                
-                <?php if (!$ergebnisseVorhanden): ?>
-                    <p>
-                        <strong>Ergebnisse noch nicht eingetragen</strong>
-                    </p>
-                <?php else: ?>
-                    <p>
-                        <strong>Ergebnisse verfügbar</strong>
-                    </p>
-                <?php endif; ?>
-
-                <table border="1">
-                    <tr>
-                        <th>Startnummer</th>
-                        <th>Fahrer</th>
-                        <th>Platzierung</th>
-                        <th>Fahrzeit (Sekunden)</th>
-                    </tr>
-                    <?php foreach ($fahrerErgebnisse as $fahrer): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($fahrer['Startnummer']) ?></td>
-                            <td><?= htmlspecialchars($fahrer['Nachname'] . ', ' . $fahrer['Vorname']) ?></td>
-                            <td>
-                                <?php if ($fahrer['Platzierung'] !== null): ?>
-                                    <?= htmlspecialchars($fahrer['Platzierung']) ?>
-                                <?php else: ?>
-                                    <span style="color:#999;">-</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if ($fahrer['Fahrzeit'] !== null): ?>
-                                    <?= htmlspecialchars($fahrer['Fahrzeit']) ?>
-                                <?php else: ?>
-                                    <span style="color:#999;">-</span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </table>
-            <?php endif; ?>
-        <?php endif; ?>
+            </tbody>
+        </table>
     <?php endif; ?>
-</body>
+    
+    <a href="anmeldung.php?id=<?php echo $radrennenID; ?>" class="nav-link">Anmeldungen ansehen</a>
+    <a href="auswertung.php" class="nav-link">Zur Auswertung</a>
+</div>
 
+</body>
 </html>

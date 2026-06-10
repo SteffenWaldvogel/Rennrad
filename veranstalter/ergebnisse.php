@@ -1,199 +1,173 @@
-<?php
 // Autor: Steffen Waldvogel
-include '../includes/db.inc.php';
-include '../includes/rennen.inc.php';
+<?php
 session_start();
 
-if (!isset($_SESSION['veranstalter_name'])) {
-    header('Location: ../veranstalter_login.php');
+require_once '../includes/db.inc.php';
+require_once '../includes/rennen.inc.php';
+require_once '../includes/ergebnisse.inc.php';
+
+$veranstalter = $_SESSION['veranstalter_name'] ?? null;
+
+if (!$veranstalter) {
+    header('Location: veranstalter_login.php');
     exit;
 }
 
-$veranstalterName = $_SESSION['veranstalter_name'];
-$fehler = "";
-$erfolg = "";
+$radrennenID = (int) $_GET['id'] ?? 0;
+$message = '';
+$error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['radrennenID'])) {
-    $radrennenID = (int) $_POST['radrennenID'];
+if ($radrennenID == 0) {
+    die("Ungültige Rennen-ID");
+}
 
-    $rennenInfo = rennenLadenEinzeln($verbindung, $radrennenID);
-    if (!$rennenInfo || $rennenInfo['RennveranstalterName'] !== $veranstalterName) {
-        $fehler = "Zugriff verweigert.";
-    } else {
-        // NEUE PRÜFUNG: Sind bereits Ergebnisse eingetragen?
-        $stmt = $verbindung->prepare(
-            "SELECT COUNT(*) FROM nimmt_teil 
-             WHERE RadrennenID = ? AND Platzierung IS NOT NULL"
-        );
-        $stmt->execute([$radrennenID]);
-        $ergebnisseExistieren = $stmt->fetchColumn() > 0;
+try {
+    $rennen = rennenMitErgebnisstatus($verbindung, $radrennenID);
+    if (!$rennen) {
+        die("Rennen nicht gefunden!");
+    }
+} catch (Exception $e) {
+    die("Fehler beim Laden des Rennens: " . htmlspecialchars($e->getMessage()));
+}
 
-        if ($ergebnisseExistieren) {
-            // ERGEBNISSE BEREITS VORHANDEN → NICHT ÜBERSCHREIBEN
-            $fehler = "Ergebnisse für dieses Rennen wurden bereits eingetragen. Die Erfassung ist ein einmaliger Vorgang und kann nicht verändert werden.";
-        } else {
-            // ERSTE EINTRAGUNG → SPEICHERN
-            $ergebnisse = [];
-            if (isset($_POST['platz']) && isset($_POST['zeit'])) {
-                foreach ($_POST['platz'] as $startnummer => $platz) {
-                    $ergebnisse[(int) $startnummer] = [
-                        'platz' => (int) $platz,
-                        'zeit' => (int) $_POST['zeit'][$startnummer]
-                    ];
-                }
-            }
-            try {
-                ergebnisseSpeichern($verbindung, $radrennenID, $ergebnisse);
-                $erfolg = "Ergebnisse wurden gespeichert.";
-            } catch (Exception $e) {
-                $fehler = "Fehler beim Speichern: " . $e->getMessage();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $ergebnisse = [];
+        
+        if (!empty($_POST['platzierung'])) {
+            foreach ($_POST['platzierung'] as $idx => $platz) {
+                if (empty($platz)) continue;
+                
+                $ergebnisse[] = [
+                    'platzierung' => (int) $platz,
+                    'mitarbeiterID' => (int) $_POST['mitarbeiterID'][$idx],
+                    'teamname' => trim($_POST['teamname'][$idx])
+                ];
             }
         }
+        
+        if (empty($ergebnisse)) {
+            $error = "Bitte mindestens eine Platzierung eingeben";
+        } else {
+            if (ergebnisseGeladen($verbindung, $radrennenID)) {
+                $error = "Ergebnisse wurden bereits eingegeben und können nicht geändert werden!";
+            } else {
+                ergebnisseEintragen($verbindung, $radrennenID, $ergebnisse);
+                $message = "Ergebnisse erfolgreich eingegeben!";
+                $rennen = rennenMitErgebnisstatus($verbindung, $radrennenID);
+            }
+        }
+        
+    } catch (Exception $e) {
+        $error = "Fehler: " . htmlspecialchars($e->getMessage());
     }
 }
 
-$rennen = rennenLadenFuerVeranstalter($verbindung, $veranstalterName);
-
-$ausgewaehltesRennen = isset($_GET['rennen']) ? (int) $_GET['rennen'] : null;
-$rennenInfo = null;
-$anmeldungen = [];
-$ergebnisseExistieren = false; // Für die Anzeige
-
-if ($ausgewaehltesRennen) {
-    $rennenInfo = rennenLadenEinzeln($verbindung, $ausgewaehltesRennen);
-    // Sicherheit: nur eigene Rennen
-    if ($rennenInfo && $rennenInfo['RennveranstalterName'] === $veranstalterName) {
-        $anmeldungen = anmeldungenLaden($verbindung, $ausgewaehltesRennen);
-        
-        // PRÜFUNG: Sind bereits Ergebnisse eingetragen?
-        $stmt = $verbindung->prepare(
-            "SELECT COUNT(*) FROM nimmt_teil 
-             WHERE RadrennenID = ? AND Platzierung IS NOT NULL"
-        );
-        $stmt->execute([$ausgewaehltesRennen]);
-        $ergebnisseExistieren = $stmt->fetchColumn() > 0;
-    } else {
-        $rennenInfo = null;
-    }
+try {
+    $allErgebnisse = rennenErgebnisseLaden($verbindung, $radrennenID);
+    $statistiken = rennenStatistiken($verbindung, $radrennenID);
+} catch (Exception $e) {
+    die("Fehler beim Laden der Ergebnisse: " . htmlspecialchars($e->getMessage()));
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ergebnisse erfassen</title>
+    <title>Ergebnisse: <?php echo htmlspecialchars($rennen['Name']); ?></title>
+    
 </head>
-
 <body>
-    <a href="dashboard.php">Zurück zum Dashboard</a>
-    <h1>Ergebnisse erfassen</h1>
 
-    <?php if ($fehler): ?>
-        <p style="color:red;"><?= htmlspecialchars($fehler) ?></p>
+<div class="container">
+    <h1>Ergebnisse: <?php echo htmlspecialchars($rennen['Name']); ?></h1>
+    
+    <?php if ($message): ?>
+        <div class="success"><?php echo htmlspecialchars($message); ?></div>
     <?php endif; ?>
-    <?php if ($erfolg): ?>
-        <p style="color:green;"><?= htmlspecialchars($erfolg) ?></p>
+    
+    <?php if ($error): ?>
+        <div class="error"><?php echo htmlspecialchars($error); ?></div>
     <?php endif; ?>
-
-    <?php if (!$rennenInfo): ?>
-        <h2>Meine Rennen</h2>
-        <?php if (empty($rennen)): ?>
-            <p>Noch keine Rennen angelegt.</p>
-        <?php else: ?>
-            <table border="1">
-                <tr>
-                    <th>Datum</th>
-                    <th>Standort</th>
-                    <th>Aktion</th>
-                </tr>
-                <?php foreach ($rennen as $r): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($r['Datum']) ?></td>
-                        <td><?= htmlspecialchars($r['Standort']) ?></td>
-                        <td>
-                            <a href="ergebnisse.php?rennen=<?= $r['RadrennenID'] ?>">Ergebnisse erfassen</a>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </table>
-        <?php endif; ?>
-
-    <?php else: ?>
-        <h2>Ergebnisse: <?= htmlspecialchars($rennenInfo['Datum'] . ' - ' . $rennenInfo['Standort']) ?></h2>
-        <a href="ergebnisse.php">← Zurück zur Übersicht</a>
-
-        <?php if (empty($anmeldungen)): ?>
-            <p>Keine Fahrer für dieses Rennen angemeldet.</p>
-        
-        <?php elseif ($ergebnisseExistieren): ?>
-            <!-- ERGEBNISSE BEREITS EINGETRAGEN → FORMULAR NICHT ANZEIGEN -->
-            <div>
-                <h3>Ergebnisse bereits eingetragen</h3>
-                <p>
-                    <strong>Die Ergebnisse für dieses Rennen wurden bereits eingetragen.</strong>
-                </p>
-                <p>
-                    Die Erfassung ist ein einmaliger Vorgang und kann nicht verändert werden.
-                </p>
+    
+    <div class="info">
+        <p><strong>Datum:</strong> <?php echo htmlspecialchars($rennen['Datum']); ?></p>
+        <p><strong>Veranstalter:</strong> <?php echo htmlspecialchars($rennen['Rennveranstalter']); ?></p>
+        <p><strong>Fortschritt:</strong> <?php echo $statistiken['ergebnisse_erfasst']; ?>/<?php echo $statistiken['anmeldungen_gesamt']; ?> Ergebnisse erfasst</p>
+        <div class="progress">
+            <div class="progress-bar" style="width: <?php echo $statistiken['ergebnisse_prozent']; ?>%">
+                <?php echo $statistiken['ergebnisse_prozent']; ?>%
             </div>
-
-            <h3>Eingetragene Ergebnisse:</h3>
-            <table border="1">
-                <tr>
-                    <th>Startnummer</th>
-                    <th>Fahrer</th>
-                    <th>Team</th>
-                    <th>Platzierung</th>
-                    <th>Fahrzeit (Sekunden)</th>
-                </tr>
-                <?php foreach ($anmeldungen as $a): ?>
+        </div>
+    </div>
+    
+    <?php if (!$rennen['ergebnisse_eingegeben']): ?>
+        <form method="POST" action="">
+            <table>
+                <thead>
                     <tr>
-                        <td><?= htmlspecialchars($a['Startnummer']) ?></td>
-                        <td><?= htmlspecialchars($a['Nachname'] . ', ' . $a['Vorname']) ?></td>
-                        <td><?= htmlspecialchars($a['Teamname']) ?></td>
-                        <td><?= htmlspecialchars($a['Platzierung'] !== null ? $a['Platzierung'] : '-') ?></td>
-                        <td><?= htmlspecialchars($a['Fahrzeit'] !== null ? $a['Fahrzeit'] : '-') ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </table>
-
-        <?php else: ?>
-            <!-- NOCH KEINE ERGEBNISSE → FORMULAR ANZEIGEN -->
-            <form action="ergebnisse.php" method="post">
-                <input type="hidden" name="radrennenID" value="<?= $ausgewaehltesRennen ?>">
-
-                <table border="1">
-                    <tr>
-                        <th>Startnummer</th>
-                        <th>Fahrer</th>
-                        <th>Team</th>
                         <th>Platzierung</th>
-                        <th>Fahrzeit (Sekunden)</th>
+                        <th>Startnummer</th>
+                        <th>Vorname</th>
+                        <th>Nachname</th>
+                        <th>Team</th>
                     </tr>
-                    <?php foreach ($anmeldungen as $a): ?>
+                </thead>
+                <tbody>
+                    <?php foreach ($allErgebnisse as $idx => $e): ?>
                         <tr>
-                            <td><?= htmlspecialchars($a['Startnummer']) ?></td>
-                            <td><?= htmlspecialchars($a['Nachname'] . ', ' . $a['Vorname']) ?></td>
-                            <td><?= htmlspecialchars($a['Teamname']) ?></td>
                             <td>
-                                <input type="number" name="platz[<?= $a['Startnummer'] ?>]" min="1"
-                                    value="<?= $a['Platzierung'] !== null ? htmlspecialchars($a['Platzierung']) : '' ?>" required>
+                                <input type="number" 
+                                       name="platzierung[]" 
+                                       value="<?php echo isset($e['Platzierung']) ? htmlspecialchars($e['Platzierung']) : ''; ?>" 
+                                       min="1" 
+                                       max="999">
                             </td>
+                            <td><?php echo htmlspecialchars($e['Startnummer']); ?></td>
+                            <td><?php echo htmlspecialchars($e['Vorname']); ?></td>
+                            <td><?php echo htmlspecialchars($e['Nachname']); ?></td>
                             <td>
-                                <input type="number" name="zeit[<?= $a['Startnummer'] ?>]" min="1"
-                                    value="<?= $a['Fahrzeit'] !== null ? htmlspecialchars($a['Fahrzeit']) : '' ?>" required>
+                                <input type="hidden" name="mitarbeiterID[]" value="<?php echo htmlspecialchars($e['MitarbeiterID']); ?>">
+                                <input type="hidden" name="teamname[]" value="<?php echo htmlspecialchars($e['Teamname']); ?>">
+                                <?php echo htmlspecialchars($e['TeamnameFull']); ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
-                </table>
-                <br>
-                <input type="submit" value="Ergebnisse speichern">
-            </form>
-            <p><em>Hinweis: Die Erfassung ist ein einmaliger Vorgang und kann nicht verändert werden.</em></p>
-        <?php endif; ?>
+                </tbody>
+            </table>
+            <button type="submit">Ergebnisse speichern</button>
+        </form>
+    <?php else: ?>
+        <div class="read-only">
+            <h2>Ergebnisse (abgeschlossen - nicht änderbar)</h2>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Platzierung</th>
+                    <th>Startnummer</th>
+                    <th>Vorname</th>
+                    <th>Nachname</th>
+                    <th>Team</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($allErgebnisse as $e): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($e['Platzierung']); ?></td>
+                        <td><?php echo htmlspecialchars($e['Startnummer']); ?></td>
+                        <td><?php echo htmlspecialchars($e['Vorname']); ?></td>
+                        <td><?php echo htmlspecialchars($e['Nachname']); ?></td>
+                        <td><?php echo htmlspecialchars($e['TeamnameFull']); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     <?php endif; ?>
-</body>
+    
+    <p><a href="rennen.php">Zurück zu den Rennen</a></p>
+</div>
 
+</body>
 </html>
