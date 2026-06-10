@@ -133,7 +133,7 @@ function rennenMitErgebnisstatus($verbindung, $radrennenID)
 {
     try {
         $stmt = $verbindung->prepare(
-            "SELECT r.RadrennenID, r.Name, r.Datum, r.Rennveranstalter,
+            "SELECT r.RadrennenID, r.Standort, r.Datum, r.RennveranstalterName,
                     CASE WHEN COUNT(DISTINCT nt.MitarbeiterID) = 
                               COUNT(CASE WHEN nt.Platzierung IS NOT NULL 
                                     THEN 1 END)
@@ -142,7 +142,7 @@ function rennenMitErgebnisstatus($verbindung, $radrennenID)
              FROM Radrennen r
              LEFT JOIN nimmt_teil nt ON r.RadrennenID = nt.RadrennenID
              WHERE r.RadrennenID = ?
-             GROUP BY r.RadrennenID"
+             GROUP BY r.RadrennenID, r.Standort, r.Datum, r.RennveranstalterName"
         );
         $stmt->execute([(int) $radrennenID]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
